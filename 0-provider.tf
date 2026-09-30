@@ -41,7 +41,7 @@ provider "aws" {
       team       = "Devops"
       cluster    = "Roboshop-eks"
       product    = "Roboshop"
-      state      = Roboshop""
+      state      = "Roboshop"
       created_by = "terraform"
     }
   }
