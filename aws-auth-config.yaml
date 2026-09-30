@@ -1,0 +1,42 @@
+apiVersion: v1
+data:
+  mapRoles: |
+    - groups:
+      - system:bootstrappers
+      - system:nodes
+      rolearn: arn:aws:iam::611334599981:role/DE_PROD_K8S-eks-node-group-role
+      username: system:node:{{EC2PrivateDNSName}}
+    - groups:
+      - system:bootstrappers
+      - system:nodes
+      - system:masters
+      rolearn: arn:aws:iam::611334599981:role/DE_PROD_K8S-eks-bastion-host-role
+      username: DE_PROD_K8S-eks-bastion-host-instance-profile
+    - groups:
+      - system:masters
+      rolearn: arn:aws:iam::611334599981:role/KopsKubernetesApisLambdaRoledev
+      username: KopsKubernetesApisLambdaRoledev
+    - groups:
+      - system:masters
+      rolearn: arn:aws:iam::611334599981:role/KopsKubernetesApisLambdaRoleprod
+      username: KopsKubernetesApisLambdaRoleprod
+    - groups:
+      - system:masters
+      rolearn: arn:aws:iam::611334599981:role/KopsAlertLambdaRoledev
+      username: KopsAlertLambdaRoledev
+    - groups:
+      - system:masters
+      rolearn: arn:aws:iam::611334599981:role/KopsAlertLambdaRoleprod
+      username: KopsAlertLambdaRoleprod
+  mapUsers: |
+    - groups:
+      - system:masters
+      userarn: arn:aws:iam::611334599981:user/sanket.b@karza.in
+      username: sanket.b@karza.in
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2023-07-07T10:05:51Z"
+  name: aws-auth
+  namespace: kube-system
+  resourceVersion: "6224"
+  uid: 1b402946-2e0c-4773-8239-82b828c31006

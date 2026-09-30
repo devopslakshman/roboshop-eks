@@ -1,0 +1,9 @@
+apiVersion: karpenter.k8s.aws/v1alpha1
+kind: AWSNodeTemplate
+metadata:
+  name: roboshop-aws-node-template
+spec:
+  securityGroupSelector:
+    karpenter.sh/discovery: "Roboshop-EKS"
+  subnetSelector:
+    karpenter.sh/discovery: "Roboshop-EKS"

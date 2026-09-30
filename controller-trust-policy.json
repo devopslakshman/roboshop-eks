@@ -1,0 +1,142 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "KarpenterNodeLifecycle",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:RunInstances",
+        "ec2:CreateFleet",
+        "ec2:CreateLaunchTemplate",
+        "ec2:DeleteLaunchTemplate",
+        "ec2:CreateTags",
+        "ec2:TerminateInstances"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "KarpenterResourceDiscovery",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeAvailabilityZones",
+        "ec2:DescribeCapacityReservations",
+        "ec2:DescribeImages",
+        "ec2:DescribeInstances",
+        "ec2:DescribeInstanceTypeOfferings",
+        "ec2:DescribeInstanceTypes",
+        "ec2:DescribeLaunchTemplates",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeSpotPriceHistory",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeTags",
+        "ec2:DescribeVolumes",
+        "ec2:DescribeVpcs",
+        "pricing:GetProducts"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "KarpenterSSMParameter",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetParameter"
+      ],
+      "Resource": "arn:aws:ssm:*:*:parameter/aws/service/eks/optimized-ami/*"
+    },
+    {
+      "Sid": "KarpenterPassNodeRole",
+      "Effect": "Allow",
+      "Action": [
+        "iam:PassRole"
+      ],
+      "Resource": "arn:aws:iam::*:role/Roboshop-EKS-karpenter-node-role",
+      "Condition": {
+        "StringEquals": {
+          "iam:PassedToService": "ec2.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Sid": "KarpenterCreateInstanceProfile",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateInstanceProfile"
+      ],
+      "Resource": "arn:aws:iam::*:instance-profile/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestTag/kubernetes.io/cluster/Roboshop-EKS": "owned",
+          "aws:RequestTag/eks:eks-cluster-name": "Roboshop-EKS",
+          "aws:RequestTag/topology.kubernetes.io/region": "us-east-1"
+        },
+        "StringLike": {
+          "aws:RequestTag/karpenter.k8s.aws/ec2nodeclass": "*"
+        }
+      }
+    },
+    {
+      "Sid": "KarpenterTagInstanceProfile",
+      "Effect": "Allow",
+      "Action": [
+        "iam:TagInstanceProfile"
+      ],
+      "Resource": "arn:aws:iam::*:instance-profile/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestTag/eks:eks-cluster-name": "Roboshop-EKS",
+          "aws:RequestTag/kubernetes.io/cluster/Roboshop-EKS": "owned",
+          "aws:RequestTag/topology.kubernetes.io/region": "us-east-1",
+          "aws:ResourceTag/kubernetes.io/cluster/Roboshop-EKS": "owned",
+          "aws:ResourceTag/topology.kubernetes.io/region": "us-east-1"
+        },
+        "StringLike": {
+          "aws:RequestTag/karpenter.k8s.aws/ec2nodeclass": "*",
+          "aws:ResourceTag/karpenter.k8s.aws/ec2nodeclass": "*"
+        }
+      }
+    },
+    {
+      "Sid": "KarpenterManageInstanceProfile",
+      "Effect": "Allow",
+      "Action": [
+        "iam:AddRoleToInstanceProfile",
+        "iam:RemoveRoleFromInstanceProfile",
+        "iam:DeleteInstanceProfile"
+      ],
+      "Resource": "arn:aws:iam::*:instance-profile/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/kubernetes.io/cluster/Roboshop-EKS": "owned",
+          "aws:ResourceTag/topology.kubernetes.io/region": "us-east-1"
+        },
+        "StringLike": {
+          "aws:ResourceTag/karpenter.k8s.aws/ec2nodeclass": "*"
+        }
+      }
+    },
+    {
+      "Sid": "KarpenterGetInstanceProfile",
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetInstanceProfile"
+      ],
+      "Resource": "arn:aws:iam::*:instance-profile/*"
+    },
+    {
+      "Sid": "KarpenterListInstanceProfiles",
+      "Effect": "Allow",
+      "Action": [
+        "iam:ListInstanceProfiles"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "KarpenterEKSClusterDiscovery",
+      "Effect": "Allow",
+      "Action": [
+        "eks:DescribeCluster"
+      ],
+      "Resource": "arn:aws:eks:us-east-1:*:cluster/Roboshop-EKS"
+    }
+  ]
+}
