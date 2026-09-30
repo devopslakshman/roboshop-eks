@@ -48,9 +48,9 @@ resource "aws_vpc" "main" {
   tags = {
     Name                     = "${var.cluster_name}-vpc"
     environment              = var.environment
-    team                     = "DE"
+    team                     = "Devops"
     cluster                  = "kubernetes"
-    product                  = "KSCAN"
+    product                  = "Roboshop"
     created_by               = "terraform"
     "karpenter.sh/discovery" = var.cluster_name
   }
