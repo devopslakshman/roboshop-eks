@@ -113,9 +113,9 @@ resource "aws_security_group" "eks_sg" {
   tags = {
     Name                     = "${var.cluster_name}-eks-sg"
     environment              = var.environment
-    team                     = "DE"
+    team                     = "Devops"
     cluster                  = "kubernetes"
-    product                  = "KSCAN"
+    product                  = "Roboshop"
     created_by               = "terraform"
     "karpenter.sh/discovery" = var.cluster_name
   }
