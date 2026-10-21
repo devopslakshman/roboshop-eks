@@ -1,3 +1,4 @@
+
 ##############################################
 # Terraform Configuration
 ##############################################
@@ -6,7 +7,6 @@ terraform {
   required_version = "~> 1.0"
 
   required_providers {
-
     aws = {
       source  = "hashicorp/aws"
       version = "~> 4.0"
@@ -23,11 +23,10 @@ terraform {
     }
 
     tls = {
-      source = "hashicorp/tls"
+      source  = "hashicorp/tls"
     }
   }
 }
-
 
 ##############################################
 # AWS Provider
@@ -46,7 +45,6 @@ provider "aws" {
     }
   }
 }
-
 
 ##############################################
 # Helm Provider
@@ -76,13 +74,13 @@ provider "helm" {
   }
 }
 
-
 ##############################################
 # Kubectl Provider
 ##############################################
 
 provider "kubectl" {
   host = aws_eks_cluster.cluster.endpoint
+
   cluster_ca_certificate = base64decode(
     aws_eks_cluster.cluster.certificate_authority[0].data
   )
