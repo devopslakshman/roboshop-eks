@@ -1,24 +1,36 @@
+
 ##############################################
-# VPC Variables
+# Variables
 ##############################################
 
 variable "vpc_cidr" {
-  description = "CIDR block for the VPC"
+  description = "CIDR block for VPC"
   type        = string
   default     = "10.0.0.0/16"
 }
 
 variable "public_subnet_cidr" {
-  description = "CIDR block for the public subnet"
+  description = "Public subnet in us-east-1a"
   type        = string
   default     = "10.0.0.0/24"
 }
 
-variable "private_subnet_cidrs" {
-  description = "CIDR blocks for private subnets"
-  type        = list(string)
+variable "public_subnet_b_cidr" {
+  description = "Public subnet in us-east-1b"
+  type        = string
+  default     = "10.0.4.0/24"
+}
 
-  default = [
+variable "public_subnet_c_cidr" {
+  description = "Public subnet in us-east-1c"
+  type        = string
+  default     = "10.0.5.0/24"
+}
+
+variable "private_subnet_cidrs" {
+  description = "Private subnet CIDRs"
+  type        = list(string)
+  default     = [
     "10.0.1.0/24",
     "10.0.2.0/24",
     "10.0.3.0/24"
@@ -26,10 +38,9 @@ variable "private_subnet_cidrs" {
 }
 
 variable "azs" {
-  description = "Availability zones"
+  description = "Availability Zones"
   type        = list(string)
-
-  default = [
+  default     = [
     "us-east-1a",
     "us-east-1b",
     "us-east-1c"
@@ -48,9 +59,6 @@ resource "aws_vpc" "main" {
   tags = {
     Name                     = "${var.cluster_name}-vpc"
     environment              = var.environment
-    team                     = "Devops"
-    cluster                  = "kubernetes"
-    product                  = "Roboshop"
     created_by               = "terraform"
     "karpenter.sh/discovery" = var.cluster_name
   }
@@ -71,7 +79,7 @@ resource "aws_internet_gateway" "igw" {
 }
 
 ##############################################
-# Public Subnet
+# Public Subnet - us-east-1a
 ##############################################
 
 resource "aws_subnet" "public" {
@@ -81,31 +89,55 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name                     = "${var.cluster_name}-public-subnet"
-    Tier                     = "public"
-    environment              = var.environment
-    "kubernetes.io/role/elb" = "1"
-    "karpenter.sh/discovery" = var.cluster_name
+    Name                                   = "${var.cluster_name}-public-subnet-${var.azs[0]}"
+    Tier                                   = "public"
+    environment                            = var.environment
+    created_by                             = "terraform"
+    "kubernetes.io/role/elb"               = "1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "karpenter.sh/discovery"               = var.cluster_name
   }
 }
 
 ##############################################
-# Private Subnets
+# Public Subnet - us-east-1b
 ##############################################
 
-resource "aws_subnet" "private" {
-  count = length(var.private_subnet_cidrs)
-
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = var.private_subnet_cidrs[count.index]
-  availability_zone = var.azs[count.index]
+resource "aws_subnet" "public_b" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = var.public_subnet_b_cidr
+  availability_zone       = var.azs[1]
+  map_public_ip_on_launch = true
 
   tags = {
-    Name                              = "${var.cluster_name}-private-subnet-${count.index + 1}"
-    Tier                              = "private"
-    environment                       = var.environment
-    "kubernetes.io/role/internal-elb" = "1"
-    "karpenter.sh/discovery"          = var.cluster_name
+    Name                                   = "${var.cluster_name}-public-subnet-${var.azs[1]}"
+    Tier                                   = "public"
+    environment                            = var.environment
+    created_by                             = "terraform"
+    "kubernetes.io/role/elb"               = "1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "karpenter.sh/discovery"               = var.cluster_name
+  }
+}
+
+##############################################
+# Public Subnet - us-east-1c
+##############################################
+
+resource "aws_subnet" "public_c" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = var.public_subnet_c_cidr
+  availability_zone       = var.azs[2]
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name                                   = "${var.cluster_name}-public-subnet-${var.azs[2]}"
+    Tier                                   = "public"
+    environment                            = var.environment
+    created_by                             = "terraform"
+    "kubernetes.io/role/elb"               = "1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "karpenter.sh/discovery"               = var.cluster_name
   }
 }
 
@@ -129,7 +161,7 @@ resource "aws_route_table" "public" {
 }
 
 ##############################################
-# Public Route Table Association
+# Public Route Table Associations
 ##############################################
 
 resource "aws_route_table_association" "public" {
@@ -137,11 +169,46 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
+resource "aws_route_table_association" "public_b" {
+  subnet_id      = aws_subnet.public_b.id
+  route_table_id = aws_route_table.public.id
+}
+
+resource "aws_route_table_association" "public_c" {
+  subnet_id      = aws_subnet.public_c.id
+  route_table_id = aws_route_table.public.id
+}
+
 ##############################################
-# Elastic IP for NAT Gateway
+# Private Subnets
+##############################################
+
+resource "aws_subnet" "private" {
+  count = length(var.private_subnet_cidrs)
+
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = var.private_subnet_cidrs[count.index]
+  availability_zone       = var.azs[count.index]
+  map_public_ip_on_launch = false
+
+  tags = {
+    Name                                   = "${var.cluster_name}-private-subnet-${var.azs[count.index]}"
+    Tier                                   = "private"
+    environment                            = var.environment
+    created_by                             = "terraform"
+    "kubernetes.io/role/internal-elb"      = "1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "karpenter.sh/discovery"               = var.cluster_name
+  }
+}
+
+##############################################
+# NAT Elastic IP
 ##############################################
 
 resource "aws_eip" "nat" {
+  vpc = true
+
   tags = {
     Name        = "${var.cluster_name}-nat-eip"
     environment = var.environment
@@ -157,15 +224,15 @@ resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public.id
 
-  depends_on = [
-    aws_internet_gateway.igw
-  ]
-
   tags = {
-    Name        = "${var.cluster_name}-nat-gateway"
+    Name        = "${var.cluster_name}-nat"
     environment = var.environment
     created_by  = "terraform"
   }
+
+  depends_on = [
+    aws_internet_gateway.igw
+  ]
 }
 
 ##############################################
@@ -208,12 +275,31 @@ output "vpc_id" {
 }
 
 output "public_subnet_id" {
-  description = "Public subnet ID"
+  description = "Public subnet in us-east-1a"
   value       = aws_subnet.public.id
 }
 
+output "public_subnet_b_id" {
+  description = "Public subnet in us-east-1b"
+  value       = aws_subnet.public_b.id
+}
+
+output "public_subnet_c_id" {
+  description = "Public subnet in us-east-1c"
+  value       = aws_subnet.public_c.id
+}
+
+output "public_subnet_ids" {
+  description = "All public subnet IDs"
+  value = [
+    aws_subnet.public.id,
+    aws_subnet.public_b.id,
+    aws_subnet.public_c.id
+  ]
+}
+
 output "private_subnet_ids" {
-  description = "Private subnet IDs"
+  description = "All private subnet IDs"
   value       = aws_subnet.private[*].id
 }
 
