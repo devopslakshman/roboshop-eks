@@ -30,7 +30,11 @@ variable "public_subnet_c_cidr" {
 variable "private_subnet_cidrs" {
   description = "Private subnet CIDRs"
   type        = list(string)
+<<<<<<< HEAD
   default     = [
+=======
+  default = [
+>>>>>>> 483dd0d (added sg ec2 code)
     "10.0.1.0/24",
     "10.0.2.0/24",
     "10.0.3.0/24"
@@ -40,7 +44,11 @@ variable "private_subnet_cidrs" {
 variable "azs" {
   description = "Availability Zones"
   type        = list(string)
+<<<<<<< HEAD
   default     = [
+=======
+  default = [
+>>>>>>> 483dd0d (added sg ec2 code)
     "us-east-1a",
     "us-east-1b",
     "us-east-1c"
@@ -89,6 +97,7 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = {
+<<<<<<< HEAD
     Name                                   = "${var.cluster_name}-public-subnet-${var.azs[0]}"
     Tier                                   = "public"
     environment                            = var.environment
@@ -96,6 +105,15 @@ resource "aws_subnet" "public" {
     "kubernetes.io/role/elb"               = "1"
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     "karpenter.sh/discovery"               = var.cluster_name
+=======
+    Name                                        = "${var.cluster_name}-public-subnet-${var.azs[0]}"
+    Tier                                        = "public"
+    environment                                 = var.environment
+    created_by                                  = "terraform"
+    "kubernetes.io/role/elb"                    = "1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "karpenter.sh/discovery"                    = var.cluster_name
+>>>>>>> 483dd0d (added sg ec2 code)
   }
 }
 
@@ -110,6 +128,7 @@ resource "aws_subnet" "public_b" {
   map_public_ip_on_launch = true
 
   tags = {
+<<<<<<< HEAD
     Name                                   = "${var.cluster_name}-public-subnet-${var.azs[1]}"
     Tier                                   = "public"
     environment                            = var.environment
@@ -117,6 +136,15 @@ resource "aws_subnet" "public_b" {
     "kubernetes.io/role/elb"               = "1"
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     "karpenter.sh/discovery"               = var.cluster_name
+=======
+    Name                                        = "${var.cluster_name}-public-subnet-${var.azs[1]}"
+    Tier                                        = "public"
+    environment                                 = var.environment
+    created_by                                  = "terraform"
+    "kubernetes.io/role/elb"                    = "1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "karpenter.sh/discovery"                    = var.cluster_name
+>>>>>>> 483dd0d (added sg ec2 code)
   }
 }
 
@@ -131,6 +159,7 @@ resource "aws_subnet" "public_c" {
   map_public_ip_on_launch = true
 
   tags = {
+<<<<<<< HEAD
     Name                                   = "${var.cluster_name}-public-subnet-${var.azs[2]}"
     Tier                                   = "public"
     environment                            = var.environment
@@ -138,6 +167,15 @@ resource "aws_subnet" "public_c" {
     "kubernetes.io/role/elb"               = "1"
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     "karpenter.sh/discovery"               = var.cluster_name
+=======
+    Name                                        = "${var.cluster_name}-public-subnet-${var.azs[2]}"
+    Tier                                        = "public"
+    environment                                 = var.environment
+    created_by                                  = "terraform"
+    "kubernetes.io/role/elb"                    = "1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "karpenter.sh/discovery"                    = var.cluster_name
+>>>>>>> 483dd0d (added sg ec2 code)
   }
 }
 
@@ -192,6 +230,7 @@ resource "aws_subnet" "private" {
   map_public_ip_on_launch = false
 
   tags = {
+<<<<<<< HEAD
     Name                                   = "${var.cluster_name}-private-subnet-${var.azs[count.index]}"
     Tier                                   = "private"
     environment                            = var.environment
@@ -199,6 +238,15 @@ resource "aws_subnet" "private" {
     "kubernetes.io/role/internal-elb"      = "1"
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     "karpenter.sh/discovery"               = var.cluster_name
+=======
+    Name                                        = "${var.cluster_name}-private-subnet-${var.azs[count.index]}"
+    Tier                                        = "private"
+    environment                                 = var.environment
+    created_by                                  = "terraform"
+    "kubernetes.io/role/internal-elb"           = "1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "karpenter.sh/discovery"                    = var.cluster_name
+>>>>>>> 483dd0d (added sg ec2 code)
   }
 }
 

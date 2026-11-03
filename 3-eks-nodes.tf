@@ -1,22 +1,19 @@
+
 ##############################################
 # EKS Managed Node Group IAM Role
 ##############################################
 
 resource "aws_iam_role" "nodes" {
-
   name = "${var.cluster_name}-eks-node-group-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-
     Statement = [
       {
         Effect = "Allow"
-
         Principal = {
           Service = "ec2.amazonaws.com"
         }
-
         Action = "sts:AssumeRole"
       }
     ]
@@ -29,24 +26,19 @@ resource "aws_iam_role" "nodes" {
   }
 }
 
-
 ##############################################
 # CloudWatch Policy for EKS Nodes
 ##############################################
 
 resource "aws_iam_policy" "amazon-eks-worker-node-cloudwatch-policy" {
-
-  name = "AmazonEKSWorkerNodeCloudwatchPolicy"
-
+  name        = "AmazonEKSWorkerNodeCloudwatchPolicy"
   description = "Allows EKS worker nodes to send logs to CloudWatch"
 
   policy = jsonencode({
     Version = "2012-10-17"
-
     Statement = [
       {
         Effect = "Allow"
-
         Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
@@ -54,104 +46,122 @@ resource "aws_iam_policy" "amazon-eks-worker-node-cloudwatch-policy" {
           "logs:PutRetentionPolicy",
           "logs:DescribeLogStreams"
         ]
-
         Resource = "*"
       }
     ]
   })
 }
-
 
 ##############################################
 # CloudWatch Policy Attachment
 ##############################################
 
 resource "aws_iam_role_policy_attachment" "amazon-eks-worker-node-cloudwatch-policy-attachment" {
-
   role       = aws_iam_role.nodes.name
   policy_arn = aws_iam_policy.amazon-eks-worker-node-cloudwatch-policy.arn
 }
-
 
 ##############################################
 # EKS Worker Node Policy
 ##############################################
 
 resource "aws_iam_role_policy_attachment" "amazon-eks-worker-node-policy" {
-
   role       = aws_iam_role.nodes.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
 }
-
 
 ##############################################
 # EKS CNI Policy
 ##############################################
 
 resource "aws_iam_role_policy_attachment" "amazon-eks-cni-policy" {
-
   role       = aws_iam_role.nodes.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
 }
-
 
 ##############################################
 # ECR Read Only Policy
 ##############################################
 
 resource "aws_iam_role_policy_attachment" "amazon-ec2-container-registry-read-only" {
-
   role       = aws_iam_role.nodes.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
-
 
 ##############################################
 # Secrets Manager Policy
 ##############################################
 
 resource "aws_iam_policy" "secrets_manager" {
-
   name        = "de-prod-secrets-manager-policy"
   description = "Allows EKS nodes to read secrets from AWS Secrets Manager"
 
   policy = jsonencode({
     Version = "2012-10-17"
-
     Statement = [
       {
         Effect = "Allow"
-
         Action = [
           "secretsmanager:GetSecretValue",
           "secretsmanager:DescribeSecret",
           "secretsmanager:ListSecrets"
         ]
-
         Resource = "*"
       }
     ]
   })
 }
 
-
 ##############################################
 # Secrets Manager Policy Attachment
 ##############################################
 
 resource "aws_iam_role_policy_attachment" "secrets-manager-policy-attachment" {
-
   role       = aws_iam_role.nodes.name
   policy_arn = aws_iam_policy.secrets_manager.arn
 }
 
+##############################################
+# Launch Template - EC2 Worker Node Names
+##############################################
+
+resource "aws_launch_template" "eks_nodes" {
+  name = "${var.cluster_name}-eks-nodes-template"
+
+  key_name = var.ec2_ssh_key
+
+  tag_specifications {
+    resource_type = "instance"
+
+    tags = {
+      Name       = "Roboshop-EKS-Worker-Node"
+      cluster    = var.cluster_name
+      created_by = "terraform"
+      NodeGroup  = "${var.cluster_name}-private-node-group"
+    }
+  }
+
+  tag_specifications {
+    resource_type = "volume"
+
+    tags = {
+      Name       = "Roboshop-EKS-Worker-Node-volume"
+      cluster    = var.cluster_name
+      created_by = "terraform"
+    }
+  }
+
+  tags = {
+    Name       = "${var.cluster_name}-eks-nodes-template"
+    created_by = "terraform"
+  }
+}
 
 ##############################################
 # EKS Managed Node Group
 ##############################################
 
 resource "aws_eks_node_group" "private-nodes" {
-
   cluster_name    = aws_eks_cluster.cluster.name
   version         = var.cluster_version
   node_group_name = "${var.cluster_name}-private-node-group"
@@ -160,21 +170,18 @@ resource "aws_eks_node_group" "private-nodes" {
 
   subnet_ids = aws_subnet.private[*].id
 
-  capacity_type  = "ON_DEMAND"
+  capacity_type  = "SPOT"
   instance_types = ["t3.medium"]
 
-  scaling_config {
-    desired_size = 2
-    min_size     = 2
-    max_size     = 10
+  launch_template {
+    id      = aws_launch_template.eks_nodes.id
+    version = tostring(aws_launch_template.eks_nodes.latest_version)
   }
 
-  remote_access {
-    ec2_ssh_key = var.ec2_ssh_key
-
-    source_security_group_ids = [
-      aws_security_group.eks_sg.id
-    ]
+  scaling_config {
+    desired_size = 1
+    min_size     = 1
+    max_size     = 10
   }
 
   update_config {
@@ -196,34 +203,27 @@ resource "aws_eks_node_group" "private-nodes" {
   }
 
   tags = {
-    Name       = "${var.cluster_name}-private-node-group"
+    Name       = "Roboshop-EKS-Worker-Node"
     cluster    = var.cluster_name
     created_by = "terraform"
   }
 }
 
-
 ############################################################
 # KARPENTER NODE IAM ROLE
-#
-# Used by EC2 instances launched by Karpenter.
 ############################################################
 
 resource "aws_iam_role" "karpenter_node" {
-
   name = "${var.cluster_name}-karpenter-node-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-
     Statement = [
       {
         Effect = "Allow"
-
         Principal = {
           Service = "ec2.amazonaws.com"
         }
-
         Action = "sts:AssumeRole"
       }
     ]
@@ -236,105 +236,66 @@ resource "aws_iam_role" "karpenter_node" {
   }
 }
 
-
 ############################################################
 # Karpenter Node - EKS Worker Node Policy
 ############################################################
 
 resource "aws_iam_role_policy_attachment" "karpenter_node_worker" {
-
   role       = aws_iam_role.karpenter_node.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-
-  depends_on = [
-    aws_iam_role.karpenter_node
-  ]
 }
-
 
 ############################################################
 # Karpenter Node - EKS CNI Policy
 ############################################################
 
 resource "aws_iam_role_policy_attachment" "karpenter_node_cni" {
-
   role       = aws_iam_role.karpenter_node.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-
-  depends_on = [
-    aws_iam_role.karpenter_node
-  ]
 }
-
 
 ############################################################
 # Karpenter Node - ECR Read Only
 ############################################################
 
 resource "aws_iam_role_policy_attachment" "karpenter_node_ecr" {
-
   role       = aws_iam_role.karpenter_node.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-
-  depends_on = [
-    aws_iam_role.karpenter_node
-  ]
 }
-
 
 ############################################################
 # Karpenter Node - SSM Managed Instance Core
 ############################################################
 
 resource "aws_iam_role_policy_attachment" "karpenter_node_ssm" {
-
   role       = aws_iam_role.karpenter_node.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-
-  depends_on = [
-    aws_iam_role.karpenter_node
-  ]
 }
-
 
 ############################################################
 # Karpenter Node - CloudWatch
 ############################################################
 
 resource "aws_iam_role_policy_attachment" "karpenter_node_cloudwatch" {
-
   role       = aws_iam_role.karpenter_node.name
   policy_arn = aws_iam_policy.amazon-eks-worker-node-cloudwatch-policy.arn
-
-  depends_on = [
-    aws_iam_role.karpenter_node
-  ]
 }
-
 
 ############################################################
 # Karpenter Node - Secrets Manager
 ############################################################
 
 resource "aws_iam_role_policy_attachment" "karpenter_node_secrets_manager" {
-
   role       = aws_iam_role.karpenter_node.name
   policy_arn = aws_iam_policy.secrets_manager.arn
-
-  depends_on = [
-    aws_iam_role.karpenter_node
-  ]
 }
-
 
 ############################################################
 # Karpenter EC2 Instance Profile
 ############################################################
 
 resource "aws_iam_instance_profile" "karpenter_node" {
-
   name = "${var.cluster_name}-karpenter-node-instance-profile"
-
   role = aws_iam_role.karpenter_node.name
 
   tags = {

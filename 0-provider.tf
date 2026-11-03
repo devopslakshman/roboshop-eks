@@ -23,7 +23,7 @@ terraform {
     }
 
     tls = {
-      source  = "hashicorp/tls"
+      source = "hashicorp/tls"
     }
   }
 }
